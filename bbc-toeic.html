@@ -129,8 +129,41 @@ body{font-family:-apple-system,'Segoe UI',sans-serif;background:#f0f2f8;min-heig
 </head>
 <body>
 
+<!-- API 키 입력 -->
+<div id="key-screen" style="min-height:100vh;background:#1e1b4b;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px 20px;">
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+    <span style="background:#bb0000;color:#fff;font-weight:900;font-size:18px;padding:4px 12px;border-radius:6px;letter-spacing:2px;">BBC</span>
+    <span style="color:#c7d2fe;font-size:20px;font-weight:700;">TOEIC Daily</span>
+  </div>
+  <p style="color:#818cf8;font-size:14px;margin:0 0 32px;">시작하려면 Anthropic API 키를 입력하세요</p>
+
+  <div style="width:100%;max-width:400px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);border-radius:16px;padding:24px;">
+    <label style="color:#c7d2fe;font-size:13px;font-weight:600;display:block;margin-bottom:8px;">🔑 API Key</label>
+    <input id="api-key-input" type="password" placeholder="sk-ant-api03-..." 
+      style="width:100%;padding:12px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:#fff;font-size:14px;outline:none;margin-bottom:8px;"
+    />
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
+      <input type="checkbox" id="show-key" onchange="document.getElementById('api-key-input').type=this.checked?'text':'password'" style="cursor:pointer;"/>
+      <label for="show-key" style="color:#94a3b8;font-size:12px;cursor:pointer;">키 표시</label>
+    </div>
+    <button onclick="saveApiKey()" style="width:100%;background:#3b82f6;color:#fff;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:700;cursor:pointer;">
+      시작하기 →
+    </button>
+    <p id="key-error" style="color:#ef4444;font-size:12px;margin:10px 0 0;text-align:center;display:none;">올바른 API 키를 입력해주세요 (sk-ant-로 시작)</p>
+  </div>
+
+  <p style="color:#475569;font-size:11px;margin-top:20px;text-align:center;">
+    키는 이 기기에만 저장되며 외부로 전송되지 않습니다<br/>
+    <a href="https://console.anthropic.com" target="_blank" style="color:#818cf8;">console.anthropic.com</a>에서 발급
+  </p>
+
+  <button id="change-key-hint" onclick="showKeyScreen()" style="display:none;margin-top:12px;background:none;border:none;color:#475569;font-size:12px;cursor:pointer;text-decoration:underline;">
+    API 키 변경
+  </button>
+</div>
+
 <!-- 분야 선택 -->
-<div id="topic-screen">
+<div id="topic-screen" style="display:none;">
   <div class="topic-logo">
     <span class="bbc-badge">BBC</span>
     <span>TOEIC Daily</span>
@@ -156,7 +189,8 @@ body{font-family:-apple-system,'Segoe UI',sans-serif;background:#f0f2f8;min-heig
       <span class="topic-badge" id="header-topic-badge"></span>
     </div>
     <div class="header-btns">
-      <button class="btn-topic" onclick="goTopicScreen()">🗂 분야</button>
+      <button class="btn-topic" onclick="changeApiKey()" style="font-size:11px;">🔑 키변경</button>
+          <button class="btn-topic" onclick="goTopicScreen()">🗂 분야</button>
       <button class="btn-new" id="btn-new" onclick="fetchNew()">🔄 새 기사</button>
       <button class="btn-vocab" onclick="openVocab()">📚 <span id="vocab-count"></span></button>
     </div>
@@ -195,7 +229,7 @@ body{font-family:-apple-system,'Segoe UI',sans-serif;background:#f0f2f8;min-heig
 <div id="toast"></div>
 
 <script>
-const API_KEY = "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";
+let API_KEY = localStorage.getItem("bbc_toeic_api_key") || "";
 
 const TOPICS = [
   {id:"economy",    emoji:"💰",label:"경제",    en:"economy and finance"},
@@ -593,8 +627,48 @@ function showToast(msg, color) {
   setTimeout(() => { el.style.display = "none"; }, 2500);
 }
 
+
+/* ── API 키 관리 ── */
+function saveApiKey() {
+  const input = document.getElementById("api-key-input").value.trim();
+  if (!input.startsWith("sk-ant-")) {
+    document.getElementById("key-error").style.display = "block";
+    return;
+  }
+  API_KEY = input;
+  localStorage.setItem("bbc_toeic_api_key", input);
+  document.getElementById("key-screen").style.display = "none";
+  document.getElementById("topic-screen").style.display = "flex";
+}
+
+function showKeyScreen() {
+  document.getElementById("app-screen").style.display = "none";
+  document.getElementById("topic-screen").style.display = "none";
+  document.getElementById("key-screen").style.display = "flex";
+}
+
+// 헤더에 키 변경 버튼 클릭 시
+function changeApiKey() {
+  if (confirm("API 키를 변경하시겠습니까?")) {
+    localStorage.removeItem("bbc_toeic_api_key");
+    API_KEY = "";
+    showKeyScreen();
+  }
+}
+
+// Enter 키로 제출
+document.getElementById("api-key-input").addEventListener("keydown", function(e) {
+  if (e.key === "Enter") saveApiKey();
+});
+
 /* ── 초기화 ── */
 renderTopicGrid();
+
+// 저장된 키 있으면 바로 분야 선택으로
+if (API_KEY && API_KEY.startsWith("sk-ant-")) {
+  document.getElementById("key-screen").style.display = "none";
+  document.getElementById("topic-screen").style.display = "flex";
+}
 </script>
 </body>
 </html>
