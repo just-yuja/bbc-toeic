@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>BBC TOEIC Daily</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:-apple-system,'Segoe UI',sans-serif;background:#f0f2f8;min-height:100vh;padding-bottom:60px;}
+
+/* 헤더 */
+.header{background:#1e1b4b;position:sticky;top:0;z-index:100;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+.bbc-badge{background:#bb0000;color:#fff;font-weight:900;font-size:13px;padding:3px 9px;border-radius:4px;letter-spacing:1px;}
+.header-title{color:#c7d2fe;font-size:13px;font-weight:600;}
+.topic-badge{background:rgba(255,255,255,.1);color:#e2e8f0;font-size:11px;padding:2px 8px;border-radius:20px;}
+.header-btns{display:flex;gap:8px;}
+.btn-topic{background:rgba(255,255,255,.1);color:#c7d2fe;border:1px solid rgba(255,255,255,.2);border-radius:20px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;}
+.btn-new{background:#3730a3;color:#fff;border:none;border-radius:20px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;}
+.btn-new:disabled{background:#374151;opacity:.6;}
+.btn-vocab{background:#f59e0b;color:#fff;border:none;border-radius:20px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;}
+
+/* 분야 선택 */
+#topic-screen{min-height:100vh;background:#1e1b4b;display:flex;flex-direction:column;align-items:center;padding:40px 20px;}
+.topic-logo{display:flex;align-items:center;gap:12px;margin-bottom:6px;}
+.topic-logo .bbc-badge{font-size:18px;padding:4px 12px;border-radius:6px;letter-spacing:2px;}
+.topic-logo span{color:#c7d2fe;font-size:20px;font-weight:700;}
+.topic-sub{color:#818cf8;font-size:14px;margin:0 0 32px;}
+.topic-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%;max-width:480px;}
+.topic-btn{background:rgba(255,255,255,0.08);border:2px solid rgba(255,255,255,0.15);border-radius:16px;padding:16px 8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;transition:all .15s;}
+.topic-btn:hover,.topic-btn:active{background:rgba(59,130,246,0.3);border-color:#3b82f6;}
+.topic-btn .emoji{font-size:26px;}
+.topic-btn .label{color:#e2e8f0;font-size:13px;font-weight:600;}
+
+/* 로딩 */
+#loading-screen{min-height:100vh;background:#1e1b4b;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;}
+.loading-emoji{font-size:48px;}
+.loading-text{color:#c7d2fe;font-size:16px;font-weight:600;}
+.dots{display:flex;gap:6px;margin-top:8px;}
+.dot{width:8px;height:8px;border-radius:50%;background:#3b82f6;animation:pulse 1.2s infinite;}
+.dot:nth-child(2){animation-delay:.2s;}
+.dot:nth-child(3){animation-delay:.4s;}
+@keyframes pulse{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1)}}
+
+/* 앱 */
+#app-screen{display:none;}
+.content{max-width:760px;margin:0 auto;padding:20px 16px 0;}
+.meta{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;align-items:center;}
+.cat-badge{background:#e0e7ff;color:#3b82f6;border-radius:20px;padding:3px 12px;font-size:12px;font-weight:700;}
+.date-text{color:#94a3b8;font-size:12px;}
+.article-title{color:#0f172a;font-size:clamp(17px,3vw,24px);line-height:1.4;margin:0 0 18px;font-family:Georgia,serif;}
+.tabs{display:flex;gap:4px;margin-bottom:20px;background:#fff;border-radius:12px;padding:4px;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+.tab{flex:1;padding:9px 0;background:transparent;color:#94a3b8;border:none;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;transition:all .2s;}
+.tab.active{background:#3b82f6;color:#fff;}
+
+/* 전문 */
+.article-box{background:#fff;border-radius:16px;box-shadow:0 2px 12px rgba(0,0,0,.07);padding:22px 26px;border:1px solid #e2e8f0;}
+.article-toolbar{display:flex;justify-content:flex-end;margin-bottom:14px;}
+.btn-listen{background:#3b82f618;color:#3b82f6;border:1px solid #3b82f640;border-radius:20px;padding:5px 14px;font-size:12px;font-weight:700;cursor:pointer;}
+.article-p{color:#1e293b;font-size:15.5px;line-height:1.85;margin:0 0 14px;font-family:Georgia,serif;}
+.vocab-word{cursor:pointer;padding:0 1px;border-radius:3px;text-decoration:underline dotted;text-decoration-color:#94a3b8;}
+.vocab-word.saved{background:#d1fae5;color:#10b981;text-decoration-color:#10b981;}
+
+/* 카드 */
+.card{background:#fff;border-radius:16px;box-shadow:0 2px 12px rgba(0,0,0,.07);margin-bottom:14px;border:1px solid #e2e8f0;overflow:hidden;}
+.card-front{padding:14px 18px;display:flex;align-items:flex-start;gap:12px;}
+.card-num{background:#3b82f6;color:#fff;border-radius:50%;width:26px;height:26px;min-width:26px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;margin-top:2px;flex-shrink:0;}
+.card-body{flex:1;}
+.card-sentence{color:#0f172a;font-size:15px;line-height:1.7;font-family:Georgia,serif;margin:0 0 10px;}
+.card-btns{display:flex;gap:8px;}
+.btn-card{border-radius:20px;padding:5px 14px;font-size:12px;font-weight:700;cursor:pointer;border:none;}
+.btn-listen2{background:#3b82f618;color:#3b82f6;border:1px solid #3b82f640;}
+.btn-analyze{background:#7c3aed18;color:#7c3aed;border:1px solid #7c3aed40;}
+.btn-toggle{background:#7c3aed18;color:#7c3aed;border:1px solid #7c3aed40;}
+
+/* 분석 패널 */
+.analysis-panel{border-top:1px solid #e2e8f0;background:#f8faff;padding:16px 18px;display:none;}
+.loading-panel{text-align:center;padding:16px 0;color:#94a3b8;}
+.loading-panel .spinner{font-size:26px;}
+.error-panel{color:#ef4444;font-size:11px;white-space:pre-wrap;word-break:break-all;background:#fff1f2;padding:10px;border-radius:8px;margin-bottom:10px;}
+.btn-retry{background:#3b82f618;color:#3b82f6;border:1px solid #3b82f640;border-radius:20px;padding:5px 14px;font-size:12px;font-weight:700;cursor:pointer;}
+
+/* 단어 그리드 */
+.word-grid-wrap{overflow-x:auto;background:#fff;border:1px solid #e2e8f0;border-radius:12px;margin-bottom:14px;}
+.word-grid{display:inline-flex;align-items:stretch;}
+.word-col{display:flex;flex-direction:column;align-items:center;padding:8px 10px;border-right:1px solid #e2e8f0;cursor:pointer;min-width:0;transition:background .15s;}
+.word-col:hover{background:#f0fdf4;}
+.word-col.saved{background:#f0fdf4;}
+.w-text{font-size:16px;font-weight:700;color:#0f172a;white-space:nowrap;}
+.w-text.saved{color:#10b981;}
+.w-pos{font-size:11px;margin-top:4px;font-weight:600;white-space:nowrap;}
+.w-role{font-size:13px;font-weight:800;margin-top:3px;min-height:20px;white-space:nowrap;}
+.w-meaning{font-size:12px;color:#475569;margin-top:3px;white-space:nowrap;}
+.w-check{font-size:9px;color:#10b981;margin-top:2px;}
+.legend{display:flex;flex-wrap:wrap;gap:12px;padding:8px 14px;border-top:1px solid #e2e8f0;background:#f8fafc;}
+.legend span{font-size:11px;}
+
+/* 해석 */
+.translation-box{background:#fef9e7;border-radius:10px;padding:11px 16px;border-left:4px solid #f59e0b;}
+.translation-label{color:#94a3b8;font-size:11px;margin:0 0 3px;font-weight:600;}
+.translation-text{color:#0f172a;margin:0;font-size:15px;line-height:1.7;font-weight:500;}
+
+/* 단어장 */
+#vocab-drawer{position:fixed;top:0;right:0;bottom:0;width:300px;background:#fff;border-left:1px solid #e2e8f0;z-index:1000;display:none;flex-direction:column;box-shadow:-6px 0 24px rgba(0,0,0,.12);}
+#vocab-drawer.open{display:flex;}
+.vocab-header{padding:14px 18px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;background:#1e1b4b;}
+.vocab-header h3{margin:0;color:#fff;font-size:15px;}
+.btn-close{background:none;border:none;color:#94a3b8;font-size:20px;cursor:pointer;}
+.vocab-list{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:6px;}
+.vocab-empty{color:#94a3b8;text-align:center;margin-top:40px;font-size:13px;}
+.vocab-item{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;}
+.vocab-item.open{border-color:#3b82f6;}
+.vocab-item-head{padding:10px 14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;}
+.vocab-word-wrap{display:flex;align-items:center;gap:8px;}
+.vocab-word-text{color:#0f172a;font-weight:700;font-size:16px;}
+.vocab-pos-badge{background:#e0e7ff;color:#3b82f6;font-size:10px;border-radius:4px;padding:1px 6px;font-weight:600;}
+.vocab-actions{display:flex;align-items:center;gap:6px;}
+.btn-speak-vocab{background:none;border:none;color:#3b82f6;cursor:pointer;font-size:16px;padding:0 2px;}
+.vocab-toggle{color:#94a3b8;font-size:13px;}
+.vocab-detail{padding:0 14px 12px;border-top:1px solid #e2e8f0;background:#fff;}
+.vocab-meaning{color:#1e293b;font-size:14px;margin:10px 0 8px;font-weight:500;}
+.vocab-meaning.empty{color:#94a3b8;font-size:13px;}
+.btn-delete{background:#fff1f2;color:#ef4444;border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:4px 12px;font-size:12px;cursor:pointer;}
+.vocab-footer{padding:12px;border-top:1px solid #e2e8f0;}
+.btn-listen-all{background:#3b82f618;color:#3b82f6;border:1px solid #3b82f640;border-radius:20px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;width:100%;}
+
+/* 토스트 */
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);color:#fff;padding:10px 22px;border-radius:30px;font-size:13px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,.2);z-index:9999;display:none;max-width:80vw;text-align:center;}
+</style>
+</head>
+<body>
+
+<!-- 분야 선택 -->
+<div id="topic-screen">
+  <div class="topic-logo">
+    <span class="bbc-badge">BBC</span>
+    <span>TOEIC Daily</span>
+  </div>
+  <p class="topic-sub">오늘 읽을 기사 분야를 선택하세요</p>
+  <div class="topic-grid" id="topic-grid"></div>
+</div>
+
+<!-- 로딩 -->
+<div id="loading-screen" style="display:none;">
+  <span class="bbc-badge" style="font-size:18px;padding:4px 12px;border-radius:6px;letter-spacing:2px;">BBC</span>
+  <div class="loading-emoji" id="loading-emoji">📰</div>
+  <p class="loading-text" id="loading-text">기사 불러오는 중...</p>
+  <div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+</div>
+
+<!-- 메인 앱 -->
+<div id="app-screen">
+  <div class="header">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span class="bbc-badge">BBC</span>
+      <span class="header-title">TOEIC Daily</span>
+      <span class="topic-badge" id="header-topic-badge"></span>
+    </div>
+    <div class="header-btns">
+      <button class="btn-topic" onclick="goTopicScreen()">🗂 분야</button>
+      <button class="btn-new" id="btn-new" onclick="fetchNew()">🔄 새 기사</button>
+      <button class="btn-vocab" onclick="openVocab()">📚 <span id="vocab-count"></span></button>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="meta">
+      <span class="cat-badge" id="article-category"></span>
+      <span class="date-text">📅 <span id="article-date"></span></span>
+    </div>
+    <h1 class="article-title" id="article-title"></h1>
+
+    <div class="tabs">
+      <button class="tab active" id="tab1" onclick="setPage(1)">📰 전문 읽기</button>
+      <button class="tab" id="tab2" onclick="setPage(2)">🔍 문장 분석</button>
+    </div>
+
+    <div id="page1"></div>
+    <div id="page2" style="display:none;"></div>
+  </div>
+</div>
+
+<!-- 단어장 -->
+<div id="vocab-drawer">
+  <div class="vocab-header">
+    <h3>📚 단어장 (<span id="vocab-drawer-count">0</span>)</h3>
+    <button class="btn-close" onclick="closeVocab()">✕</button>
+  </div>
+  <div class="vocab-list" id="vocab-list"></div>
+  <div class="vocab-footer" id="vocab-footer" style="display:none;">
+    <button class="btn-listen-all" onclick="listenAll()">🔊 전체 듣기</button>
+  </div>
+</div>
+
+<!-- 토스트 -->
+<div id="toast"></div>
+
+<script>
+const API_KEY = "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";
+
+const TOPICS = [
+  {id:"economy",    emoji:"💰",label:"경제",    en:"economy and finance"},
+  {id:"politics",   emoji:"🏛️",label:"정치",    en:"global politics and diplomacy"},
+  {id:"technology", emoji:"💻",label:"테크",    en:"technology and AI"},
+  {id:"science",    emoji:"🔬",label:"과학",    en:"science and research"},
+  {id:"health",     emoji:"🏥",label:"건강",    en:"health and medicine"},
+  {id:"environment",emoji:"🌍",label:"환경",    en:"climate and environment"},
+  {id:"culture",    emoji:"🎭",label:"문화",    en:"arts and culture"},
+  {id:"sports",     emoji:"⚽",label:"스포츠",  en:"sports"},
+  {id:"space",      emoji:"🚀",label:"우주",    en:"space exploration"},
+  {id:"business",   emoji:"📈",label:"비즈니스",en:"business and markets"},
+  {id:"education",  emoji:"📚",label:"교육",    en:"education"},
+  {id:"random",     emoji:"🎲",label:"랜덤",    en:"any interesting current topic"},
+];
+
+const POS_COLOR = {
+  "명사":"#2563eb","대명사":"#2563eb",
+  "동사":"#9333ea","과거동사":"#9333ea","조동사":"#9333ea",
+  "현재분사":"#9333ea","과거분사":"#9333ea","to부정사":"#9333ea",
+  "형용사":"#d97706","부사":"#059669",
+  "전치사":"#64748b","접속사":"#64748b","관사":"#64748b","기타":"#64748b",
+};
+const ROLE_COLOR = {S:"#2563eb",V:"#9333ea",O:"#d97706",C:"#059669",M:"#64748b",IO:"#d97706",DO:"#dc2626"};
+
+let currentTopic = null;
+let currentArticle = null;
+let vocabList = [];
+let currentPage = 1;
+let expandedVocabIdx = null;
+
+/* ── 분야 선택 화면 렌더 ── */
+function renderTopicGrid() {
+  const grid = document.getElementById("topic-grid");
+  grid.innerHTML = TOPICS.map(t => `
+    <button class="topic-btn" onclick="selectTopic('${t.id}')">
+      <span class="emoji">${t.emoji}</span>
+      <span class="label">${t.label}</span>
+    </button>
+  `).join("");
+}
+
+function selectTopic(id) {
+  currentTopic = TOPICS.find(t => t.id === id);
+  loadArticle();
+}
+
+function goTopicScreen() {
+  document.getElementById("app-screen").style.display = "none";
+  document.getElementById("topic-screen").style.display = "flex";
+}
+
+/* ── 화면 전환 ── */
+function showLoading() {
+  document.getElementById("topic-screen").style.display = "none";
+  document.getElementById("app-screen").style.display = "none";
+  document.getElementById("loading-screen").style.display = "flex";
+  if (currentTopic) {
+    document.getElementById("loading-emoji").textContent = currentTopic.emoji;
+    document.getElementById("loading-text").textContent = currentTopic.label + " 기사 불러오는 중...";
+  }
+}
+function showApp() {
+  document.getElementById("loading-screen").style.display = "none";
+  document.getElementById("app-screen").style.display = "block";
+}
+
+/* ── API 호출 ── */
+async function callClaude(messages, sys) {
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "anthropic-version": "2023-06-01",
+      "x-api-key": API_KEY,
+      "anthropic-dangerous-direct-browser-access": "true",
+    },
+    body: JSON.stringify({
+      model: "claude-haiku-4-5-20251001",
+      max_tokens: 2000,
+      system: sys,
+      messages: messages,
+    }),
+  });
+  const rawText = await res.text();
+  if (!res.ok) {
+    let msg = "HTTP " + res.status;
+    try { const d = JSON.parse(rawText); msg = d.error?.message || msg; } catch(e) {}
+    throw new Error(msg);
+  }
+  let data;
+  try { data = JSON.parse(rawText); } catch(e) { throw new Error("응답파싱실패: " + rawText.slice(0,100)); }
+  if (data.error) throw new Error(data.error.message || "API error");
+  const content = (data.content || []).map(b => b.text || "").join("").trim();
+  if (!content) throw new Error("빈응답");
+  return content;
+}
+
+function extractJSON(raw) {
+  if (!raw) return null;
+  let s = raw.replace(/```json/gi,"").replace(/```/g,"").trim();
+  const start = s.indexOf("{"), end = s.lastIndexOf("}");
+  if (start === -1 || end === -1) return null;
+  s = s.slice(start, end+1);
+  try { return JSON.parse(s); } catch(e) {}
+  try { return JSON.parse(s.replace(/,\s*([}\]])/g,"$1")); } catch(e) {}
+  try { return JSON.parse(s.replace(/[\x00-\x1F\x7F]/g," ")); } catch(e) {}
+  return null;
+}
+
+/* ── 기사 불러오기 ── */
+async function loadArticle() {
+  showLoading();
+  try {
+    const sys = "You are a helpful assistant. Always respond with valid JSON only. No markdown, no explanation.";
+    const userMsg = `Write a BBC News article about ${currentTopic.en} from April 2026.\n\nRespond with ONLY this JSON:\n{"title":"Article headline","category":"Economy","date":"April 6, 2026","sentences":["S1.","S2.","S3.","S4.","S5.","S6.","S7.","S8."]}\n\nWrite exactly 8 sentences in natural BBC English at TOEIC B2-C1 level.`;
+    const raw = await callClaude([{role:"user",content:userMsg}], sys);
+    const parsed = extractJSON(raw);
+    if (!parsed?.sentences?.length) throw new Error("파싱실패: " + raw.slice(0,150));
+    currentArticle = parsed;
+    renderArticle();
+    showApp();
+  } catch(e) {
+    document.getElementById("loading-screen").style.display = "none";
+    document.getElementById("topic-screen").style.display = "flex";
+    // 에러를 로딩 화면에 크게 표시
+    const errBox = document.createElement("div");
+    errBox.style.cssText = "position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1e1b4b;color:#fff;border:2px solid #ef4444;padding:16px 20px;border-radius:12px;font-size:13px;max-width:90vw;word-break:break-all;z-index:9999;text-align:center;";
+    errBox.textContent = "❌ " + e.message;
+    document.body.appendChild(errBox);
+    setTimeout(()=>errBox.remove(), 10000);
+  }
+}
+
+async function fetchNew() {
+  if (!currentTopic) return;
+  const btn = document.getElementById("btn-new");
+  btn.disabled = true; btn.textContent = "⏳ 로딩중";
+  try {
+    const sys = "You are a helpful assistant. Always respond with valid JSON only. No markdown, no explanation.";
+    const userMsg = `Write a BBC News article about ${currentTopic.en} from April 2026.\n\nRespond with ONLY this JSON:\n{"title":"Article headline","category":"Economy","date":"April 6, 2026","sentences":["S1.","S2.","S3.","S4.","S5.","S6.","S7.","S8."]}\n\nWrite exactly 8 sentences in natural BBC English at TOEIC B2-C1 level.`;
+    const raw = await callClaude([{role:"user",content:userMsg}], sys);
+    const parsed = extractJSON(raw);
+    if (!parsed?.sentences?.length) throw new Error("파싱실패");
+    currentArticle = parsed;
+    setPage(1);
+    renderArticle();
+    showToast("✅ 새 기사 로드 완료!", "#10b981");
+  } catch(e) {
+    showToast("❌ " + e.message, "#ef4444");
+  }
+  btn.disabled = false; btn.textContent = "🔄 새 기사";
+}
+
+/* ── 기사 렌더 ── */
+function renderArticle() {
+  document.getElementById("header-topic-badge").textContent = currentTopic.emoji + " " + currentTopic.label;
+  document.getElementById("article-category").textContent = currentArticle.category;
+  document.getElementById("article-date").textContent = currentArticle.date;
+  document.getElementById("article-title").textContent = currentArticle.title;
+  renderPage1();
+  renderPage2();
+}
+
+function renderPage1() {
+  const el = document.getElementById("page1");
+  el.innerHTML = `
+    <div class="article-box">
+      <div class="article-toolbar">
+        <button class="btn-listen" onclick="speak('${escapeStr(currentArticle.sentences.join(" "))}', 0.85)">🔊 전체 듣기</button>
+      </div>
+      ${currentArticle.sentences.map(s => `
+        <p class="article-p">${s.split(" ").map(w => wordSpan(w)).join("")}</p>
+      `).join("")}
+    </div>
+  `;
+}
+
+function wordSpan(word) {
+  const clean = word.replace(/[^a-zA-Z'-]/g,"");
+  if (clean.length < 3) return `<span>${word} </span>`;
+  const saved = vocabList.some(v => v.word.toLowerCase() === clean.toLowerCase());
+  return `<span class="vocab-word${saved?" saved":""}" onclick="addVocab('${escapeStr(clean)}','','')">${word} </span>`;
+}
+
+function escapeStr(s) {
+  return s.replace(/\\/g,"\\\\").replace(/'/g,"\\'").replace(/\n/g," ");
+}
+
+function renderPage2() {
+  const el = document.getElementById("page2");
+  el.innerHTML = `
+    <p style="color:#94a3b8;font-size:13px;margin-bottom:14px;">📌 <strong style="color:#7c3aed;">분석하기</strong> 후 단어 클릭 → 단어장 추가</p>
+    ${currentArticle.sentences.map((s,i) => renderCard(s,i)).join("")}
+  `;
+}
+
+function renderCard(sentence, idx) {
+  return `
+    <div class="card" id="card-${idx}">
+      <div class="card-front">
+        <div class="card-num">${idx+1}</div>
+        <div class="card-body">
+          <p class="card-sentence">${sentence.split(" ").map(w=>wordSpan(w)).join("")}</p>
+          <div class="card-btns">
+            <button class="btn-card btn-listen2" onclick="speak('${escapeStr(sentence)}')">🔊 듣기</button>
+            <button class="btn-card btn-analyze" id="analyze-btn-${idx}" onclick="analyzeCard(${idx}, '${escapeStr(sentence)}')">🔍 분석하기</button>
+          </div>
+        </div>
+      </div>
+      <div class="analysis-panel" id="panel-${idx}"></div>
+    </div>
+  `;
+}
+
+/* ── 문장 분석 ── */
+async function analyzeCard(idx, sentence) {
+  const panel = document.getElementById("panel-" + idx);
+  const btn   = document.getElementById("analyze-btn-" + idx);
+
+  // 이미 분석됨 → 접기/펼치기
+  if (btn.dataset.done === "1") {
+    const isOpen = panel.style.display === "block";
+    panel.style.display = isOpen ? "none" : "block";
+    btn.textContent = isOpen ? "▼ 펼치기" : "▲ 접기";
+    return;
+  }
+
+  panel.style.display = "block";
+  panel.innerHTML = `<div class="loading-panel"><div class="spinner">⏳</div><p style="margin:6px 0 0;font-size:13px;">분석 중...</p></div>`;
+
+  try {
+    const sys = "You are a helpful assistant. Always respond with valid JSON only. No markdown, no explanation.";
+    const userMsg = `Analyze this English sentence for Korean learners: "${sentence}"\n\nRespond with ONLY this JSON:\n{"translation":"Korean translation","tokens":[{"text":"The","pos":"관사","role":null,"meaning":"그"},{"text":"cat","pos":"명사","role":"S","meaning":"고양이"},{"text":"runs","pos":"동사","role":"V","meaning":"달린다"}]}\n\nFor pos use only: 명사 동사 형용사 부사 전치사 접속사 관사 대명사 조동사 과거동사 현재분사 과거분사 to부정사 기타\nFor role use only: S V O C M IO DO or null\nInclude every word in the sentence in order.`;
+    const raw    = await callClaude([{role:"user",content:userMsg}], sys);
+    const parsed = extractJSON(raw);
+    if (!parsed?.tokens?.length) throw new Error("JSON추출실패:\n" + raw.slice(0,200));
+    if (!parsed.translation)     throw new Error("translation없음");
+
+    panel.innerHTML = renderAnalysis(parsed, idx);
+    btn.textContent = "▲ 접기";
+    btn.dataset.done = "1";
+  } catch(e) {
+    panel.innerHTML = `
+      <div>
+        <pre class="error-panel">❌ ${e.message}</pre>
+        <button class="btn-retry" onclick="analyzeCard(${idx}, '${escapeStr(sentence)}')">🔄 다시 시도</button>
+      </div>`;
+  }
+}
+
+function renderAnalysis(parsed, idx) {
+  const tokensHtml = parsed.tokens.map((t,i) => {
+    const pc = POS_COLOR[t.pos] || "#64748b";
+    const rc = t.role ? ROLE_COLOR[t.role] : null;
+    const clean = t.text.replace(/[^a-zA-Z'-]/g,"");
+    const saved = vocabList.some(v => v.word.toLowerCase() === clean.toLowerCase());
+    return `
+      <div class="word-col${saved?" saved":""}" onclick="${clean.length>2?`addVocabFromAnalysis('${escapeStr(clean)}','${escapeStr(t.meaning)}','${escapeStr(t.pos)}',${idx})`:"void(0)"}">
+        <span class="w-text${saved?" saved":""}" style="color:${saved?"#10b981":pc}">${t.text}</span>
+        <span class="w-pos" style="color:${pc}">${t.pos}</span>
+        <span class="w-role" style="color:${rc||"transparent"}">${t.role||""}</span>
+        <span class="w-meaning">${t.meaning}</span>
+        ${saved?`<span class="w-check">✓</span>`:""}
+      </div>
+    `;
+  }).join("");
+
+  return `
+    <div class="word-grid-wrap">
+      <div class="word-grid">${tokensHtml}</div>
+      <div class="legend">
+        <span><span style="color:#2563eb;font-weight:800;">S</span> <span style="color:#94a3b8;">주어</span></span>
+        <span><span style="color:#9333ea;font-weight:800;">V</span> <span style="color:#94a3b8;">동사</span></span>
+        <span><span style="color:#d97706;font-weight:800;">O</span> <span style="color:#94a3b8;">목적어</span></span>
+        <span><span style="color:#059669;font-weight:800;">C</span> <span style="color:#94a3b8;">보어</span></span>
+        <span><span style="color:#64748b;font-weight:800;">M</span> <span style="color:#94a3b8;">수식어</span></span>
+        <span style="margin-left:auto;color:#94a3b8;">단어 클릭 → 단어장</span>
+      </div>
+    </div>
+    <div class="translation-box">
+      <p class="translation-label">📝 해석</p>
+      <p class="translation-text">${parsed.translation}</p>
+    </div>
+  `;
+}
+
+/* ── 탭 전환 ── */
+function setPage(n) {
+  currentPage = n;
+  document.getElementById("page1").style.display = n===1 ? "block" : "none";
+  document.getElementById("page2").style.display = n===2 ? "block" : "none";
+  document.getElementById("tab1").className = "tab" + (n===1?" active":"");
+  document.getElementById("tab2").className = "tab" + (n===2?" active":"");
+}
+
+/* ── 단어장 ── */
+function addVocab(word, meaning, pos) {
+  const w = word.replace(/[.,!?;:"()]/g,"").trim();
+  if (!w || w.length < 2) return;
+  if (vocabList.some(v => v.word.toLowerCase() === w.toLowerCase())) {
+    showToast(`"${w}" 이미 있음`, "#f59e0b"); return;
+  }
+  vocabList.push({word:w, meaning:meaning||"", pos:pos||""});
+  updateVocabCount();
+  showToast(`📝 "${w}" 추가!`, "#10b981");
+  renderPage1();
+  if (currentPage === 2) renderPage2();
+}
+
+function addVocabFromAnalysis(word, meaning, pos, cardIdx) {
+  addVocab(word, meaning, pos);
+}
+
+function updateVocabCount() {
+  const c = vocabList.length;
+  document.getElementById("vocab-count").textContent = c > 0 ? c : "";
+  document.getElementById("vocab-drawer-count").textContent = c;
+  document.getElementById("vocab-footer").style.display = c > 0 ? "block" : "none";
+}
+
+function openVocab() {
+  renderVocabList();
+  document.getElementById("vocab-drawer").classList.add("open");
+}
+function closeVocab() {
+  document.getElementById("vocab-drawer").classList.remove("open");
+}
+
+function renderVocabList() {
+  const el = document.getElementById("vocab-list");
+  if (vocabList.length === 0) {
+    el.innerHTML = `<p class="vocab-empty">단어를 추가해보세요!</p>`;
+    return;
+  }
+  el.innerHTML = vocabList.map((v,i) => {
+    const isOpen = expandedVocabIdx === i;
+    return `
+      <div class="vocab-item${isOpen?" open":""}" id="vocab-item-${i}">
+        <div class="vocab-item-head" onclick="toggleVocabItem(${i})">
+          <div class="vocab-word-wrap">
+            <span class="vocab-word-text">${v.word}</span>
+            ${v.pos?`<span class="vocab-pos-badge">${v.pos}</span>`:""}
+          </div>
+          <div class="vocab-actions">
+            <button class="btn-speak-vocab" onclick="event.stopPropagation();speak('${escapeStr(v.word)}')">🔊</button>
+            <span class="vocab-toggle">${isOpen?"▲":"▼"}</span>
+          </div>
+        </div>
+        ${isOpen?`
+          <div class="vocab-detail">
+            <p class="vocab-meaning${v.meaning?"":" empty"}">${v.meaning||"뜻 없음"}</p>
+            <button class="btn-delete" onclick="deleteVocab(${i})">🗑 삭제</button>
+          </div>
+        `:""}
+      </div>
+    `;
+  }).join("");
+}
+
+function toggleVocabItem(i) {
+  expandedVocabIdx = expandedVocabIdx === i ? null : i;
+  renderVocabList();
+}
+
+function deleteVocab(i) {
+  vocabList.splice(i, 1);
+  if (expandedVocabIdx === i) expandedVocabIdx = null;
+  else if (expandedVocabIdx > i) expandedVocabIdx--;
+  updateVocabCount();
+  renderVocabList();
+}
+
+function listenAll() {
+  const text = vocabList.map(v => v.word + ". " + (v.meaning||"")).join(". ");
+  speak(text);
+}
+
+/* ── TTS ── */
+function speak(text, rate) {
+  if (!("speechSynthesis" in window)) return;
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = "en-US";
+  u.rate = rate || 0.88;
+  window.speechSynthesis.speak(u);
+}
+
+/* ── 토스트 ── */
+function showToast(msg, color) {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.style.background = color || "#10b981";
+  el.style.display = "block";
+  setTimeout(() => { el.style.display = "none"; }, 2500);
+}
+
+/* ── 초기화 ── */
+renderTopicGrid();
+</script>
+</body>
+</html>
