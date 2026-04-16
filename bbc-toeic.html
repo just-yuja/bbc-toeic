@@ -257,7 +257,7 @@ const ROLE_COLOR = {S:"#2563eb",V:"#9333ea",O:"#d97706",C:"#059669",M:"#64748b",
 
 let currentTopic = null;
 let currentArticle = null;
-let vocabList = [];
+let vocabList = JSON.parse(localStorage.getItem("bbc_toeic_vocab") || "[]");
 let currentPage = 1;
 let expandedVocabIdx = null;
 
@@ -527,6 +527,10 @@ function setPage(n) {
 }
 
 /* ── 단어장 ── */
+function saveVocabToStorage() {
+  localStorage.setItem("bbc_toeic_vocab", JSON.stringify(vocabList));
+}
+
 function addVocab(word, meaning, pos) {
   const w = word.replace(/[.,!?;:"()]/g,"").trim();
   if (!w || w.length < 2) return;
@@ -534,6 +538,7 @@ function addVocab(word, meaning, pos) {
     showToast(`"${w}" 이미 있음`, "#f59e0b"); return;
   }
   vocabList.push({word:w, meaning:meaning||"", pos:pos||""});
+  saveVocabToStorage();
   updateVocabCount();
   showToast(`📝 "${w}" 추가!`, "#10b981");
   renderPage1();
@@ -599,6 +604,7 @@ function deleteVocab(i) {
   vocabList.splice(i, 1);
   if (expandedVocabIdx === i) expandedVocabIdx = null;
   else if (expandedVocabIdx > i) expandedVocabIdx--;
+  saveVocabToStorage();
   updateVocabCount();
   renderVocabList();
 }
@@ -663,6 +669,7 @@ document.getElementById("api-key-input").addEventListener("keydown", function(e)
 
 /* ── 초기화 ── */
 renderTopicGrid();
+updateVocabCount();
 
 // 저장된 키 있으면 바로 분야 선택으로
 if (API_KEY && API_KEY.startsWith("sk-ant-")) {
