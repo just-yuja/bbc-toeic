@@ -120,8 +120,16 @@ body{font-family:-apple-system,'Segoe UI',sans-serif;background:#f0f2f8;min-heig
 .vocab-meaning{color:#1e293b;font-size:14px;margin:10px 0 8px;font-weight:500;}
 .vocab-meaning.empty{color:#94a3b8;font-size:13px;}
 .btn-delete{background:#fff1f2;color:#ef4444;border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:4px 12px;font-size:12px;cursor:pointer;}
-.vocab-footer{padding:12px;border-top:1px solid #e2e8f0;}
+.vocab-footer{padding:12px;border-top:1px solid #e2e8f0;display:flex;flex-direction:column;gap:8px;}
 .btn-listen-all{background:#3b82f618;color:#3b82f6;border:1px solid #3b82f640;border-radius:20px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;width:100%;}
+/* Notion 상태 */
+.notion-status{display:flex;align-items:center;gap:6px;font-size:11px;padding:4px 10px;border-radius:20px;font-weight:600;}
+.notion-status.connected{background:#d1fae5;color:#059669;}
+.notion-status.disconnected{background:#fee2e2;color:#ef4444;}
+.notion-status.syncing{background:#e0e7ff;color:#3b82f6;}
+.notion-badge{font-size:10px;background:#000;color:#fff;border-radius:4px;padding:1px 5px;font-weight:700;letter-spacing:.5px;}
+.vocab-sync-row{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#f8fafc;border-top:1px solid #e2e8f0;font-size:11px;}
+.btn-notion-settings{background:none;border:none;color:#94a3b8;cursor:pointer;font-size:12px;text-decoration:underline;}
 
 /* 토스트 */
 #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);color:#fff;padding:10px 22px;border-radius:30px;font-size:13px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,.2);z-index:9999;display:none;max-width:80vw;text-align:center;}
@@ -135,25 +143,48 @@ body{font-family:-apple-system,'Segoe UI',sans-serif;background:#f0f2f8;min-heig
     <span style="background:#bb0000;color:#fff;font-weight:900;font-size:18px;padding:4px 12px;border-radius:6px;letter-spacing:2px;">BBC</span>
     <span style="color:#c7d2fe;font-size:20px;font-weight:700;">TOEIC Daily</span>
   </div>
-  <p style="color:#818cf8;font-size:14px;margin:0 0 32px;">시작하려면 Anthropic API 키를 입력하세요</p>
+  <p style="color:#818cf8;font-size:14px;margin:0 0 32px;">시작하려면 API 키를 입력하세요</p>
 
-  <div style="width:100%;max-width:400px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);border-radius:16px;padding:24px;">
-    <label style="color:#c7d2fe;font-size:13px;font-weight:600;display:block;margin-bottom:8px;">🔑 API Key</label>
-    <input id="api-key-input" type="password" placeholder="sk-ant-api03-..." 
+  <div style="width:100%;max-width:400px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:0;">
+    <!-- Anthropic -->
+    <label style="color:#c7d2fe;font-size:13px;font-weight:600;display:block;margin-bottom:8px;">🔑 Anthropic API Key</label>
+    <input id="api-key-input" type="password" placeholder="sk-ant-api03-..."
       style="width:100%;padding:12px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:#fff;font-size:14px;outline:none;margin-bottom:8px;"
     />
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:20px;">
       <input type="checkbox" id="show-key" onchange="document.getElementById('api-key-input').type=this.checked?'text':'password'" style="cursor:pointer;"/>
       <label for="show-key" style="color:#94a3b8;font-size:12px;cursor:pointer;">키 표시</label>
     </div>
+
+    <!-- Notion 구분선 -->
+    <div style="border-top:1px solid rgba(255,255,255,0.1);margin-bottom:20px;"></div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+      <span style="background:#000;color:#fff;font-size:11px;font-weight:700;padding:2px 7px;border-radius:4px;letter-spacing:.5px;">N</span>
+      <span style="color:#c7d2fe;font-size:13px;font-weight:600;">Notion 단어장 연동 <span style="color:#64748b;font-weight:400;">(선택)</span></span>
+    </div>
+
+    <label style="color:#94a3b8;font-size:12px;font-weight:600;display:block;margin-bottom:6px;">Integration Token</label>
+    <input id="notion-token-input" type="password" placeholder="secret_..."
+      style="width:100%;padding:11px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:#fff;font-size:13px;outline:none;margin-bottom:12px;"
+    />
+
+    <label style="color:#94a3b8;font-size:12px;font-weight:600;display:block;margin-bottom:6px;">Database ID</label>
+    <input id="notion-db-input" type="text" placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+      style="width:100%;padding:11px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:#fff;font-size:13px;outline:none;margin-bottom:6px;"
+    />
+    <p style="color:#475569;font-size:11px;margin:0 0 20px;">
+      Notion DB에 Name(title), Meaning(text), POS(select) 속성이 필요합니다.<br/>
+      입력하지 않으면 단어장은 현재 세션에만 저장됩니다.
+    </p>
+
     <button onclick="saveApiKey()" style="width:100%;background:#3b82f6;color:#fff;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:700;cursor:pointer;">
       시작하기 →
     </button>
-    <p id="key-error" style="color:#ef4444;font-size:12px;margin:10px 0 0;text-align:center;display:none;">올바른 API 키를 입력해주세요 (sk-ant-로 시작)</p>
+    <p id="key-error" style="color:#ef4444;font-size:12px;margin:10px 0 0;text-align:center;display:none;">올바른 Anthropic API 키를 입력해주세요 (sk-ant-로 시작)</p>
   </div>
 
   <p style="color:#475569;font-size:11px;margin-top:20px;text-align:center;">
-    키는 이 기기에만 저장되며 외부로 전송되지 않습니다<br/>
+    모든 키는 이 기기에만 저장되며 외부로 전송되지 않습니다<br/>
     <a href="https://console.anthropic.com" target="_blank" style="color:#818cf8;">console.anthropic.com</a>에서 발급
   </p>
 
@@ -217,11 +248,15 @@ body{font-family:-apple-system,'Segoe UI',sans-serif;background:#f0f2f8;min-heig
 <div id="vocab-drawer">
   <div class="vocab-header">
     <h3>📚 단어장 (<span id="vocab-drawer-count">0</span>)</h3>
-    <button class="btn-close" onclick="closeVocab()">✕</button>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span id="notion-status-badge"></span>
+      <button class="btn-close" onclick="closeVocab()">✕</button>
+    </div>
   </div>
   <div class="vocab-list" id="vocab-list"></div>
   <div class="vocab-footer" id="vocab-footer" style="display:none;">
     <button class="btn-listen-all" onclick="listenAll()">🔊 전체 듣기</button>
+    <div id="vocab-sync-info" style="display:none;font-size:11px;color:#94a3b8;text-align:center;padding-top:4px;"></div>
   </div>
 </div>
 
@@ -230,6 +265,9 @@ body{font-family:-apple-system,'Segoe UI',sans-serif;background:#f0f2f8;min-heig
 
 <script>
 let API_KEY = localStorage.getItem("bbc_toeic_api_key") || "";
+let NOTION_TOKEN = localStorage.getItem("bbc_toeic_notion_token") || "";
+let NOTION_DB_ID = localStorage.getItem("bbc_toeic_notion_db_id") || "";
+let notionEnabled = !!(NOTION_TOKEN && NOTION_DB_ID);
 
 const TOPICS = [
   {id:"economy",    emoji:"💰",label:"경제",    en:"economy and finance"},
@@ -526,14 +564,76 @@ function setPage(n) {
   document.getElementById("tab2").className = "tab" + (n===2?" active":"");
 }
 
+/* ── Notion API ── */
+async function notionFetch(path, options = {}) {
+  const url = "/api" + path;
+  const headers = {
+    "Content-Type": "application/json",
+    ...(options.headers || {}),
+    "token": NOTION_TOKEN,
+    "database_id": NOTION_DB_ID,
+  };
+  const res = await fetch(url, { ...options, headers });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Notion 오류");
+  return data;
+}
+
+function updateNotionBadge(state) {
+  const badge = document.getElementById("notion-status-badge");
+  if (!badge) return;
+  if (!notionEnabled) { badge.innerHTML = ""; return; }
+  const map = {
+    connected: `<span class="notion-status connected"><span class="notion-badge">N</span> 연동됨</span>`,
+    disconnected: `<span class="notion-status disconnected"><span class="notion-badge">N</span> 오류</span>`,
+    syncing: `<span class="notion-status syncing"><span class="notion-badge">N</span> 동기화 중...</span>`,
+  };
+  badge.innerHTML = map[state] || "";
+}
+
+async function loadVocabFromNotion() {
+  if (!notionEnabled) return;
+  updateNotionBadge("syncing");
+  try {
+    const list = await notionFetch("/vocab");
+    vocabList = list;
+    updateVocabCount();
+    renderPage1();
+    updateNotionBadge("connected");
+    const syncInfo = document.getElementById("vocab-sync-info");
+    if (syncInfo) { syncInfo.style.display = "block"; syncInfo.textContent = "Notion에서 불러옴 ✓"; }
+  } catch(e) {
+    updateNotionBadge("disconnected");
+    showToast("Notion 로드 실패: " + e.message, "#ef4444");
+  }
+}
+
 /* ── 단어장 ── */
-function addVocab(word, meaning, pos) {
+async function addVocab(word, meaning, pos) {
   const w = word.replace(/[.,!?;:"()]/g,"").trim();
   if (!w || w.length < 2) return;
   if (vocabList.some(v => v.word.toLowerCase() === w.toLowerCase())) {
     showToast(`"${w}" 이미 있음`, "#f59e0b"); return;
   }
-  vocabList.push({word:w, meaning:meaning||"", pos:pos||""});
+
+  const entry = { word: w, meaning: meaning || "", pos: pos || "" };
+
+  if (notionEnabled) {
+    updateNotionBadge("syncing");
+    try {
+      const saved = await notionFetch("/vocab", {
+        method: "POST",
+        body: JSON.stringify(entry),
+      });
+      entry.id = saved.id;
+      updateNotionBadge("connected");
+    } catch(e) {
+      updateNotionBadge("disconnected");
+      showToast("Notion 저장 실패: " + e.message, "#ef4444");
+    }
+  }
+
+  vocabList.push(entry);
   updateVocabCount();
   showToast(`📝 "${w}" 추가!`, "#10b981");
   renderPage1();
@@ -595,7 +695,20 @@ function toggleVocabItem(i) {
   renderVocabList();
 }
 
-function deleteVocab(i) {
+async function deleteVocab(i) {
+  const entry = vocabList[i];
+
+  if (notionEnabled && entry.id) {
+    updateNotionBadge("syncing");
+    try {
+      await notionFetch("/vocab/" + entry.id, { method: "DELETE" });
+      updateNotionBadge("connected");
+    } catch(e) {
+      updateNotionBadge("disconnected");
+      showToast("Notion 삭제 실패: " + e.message, "#ef4444");
+    }
+  }
+
   vocabList.splice(i, 1);
   if (expandedVocabIdx === i) expandedVocabIdx = null;
   else if (expandedVocabIdx > i) expandedVocabIdx--;
@@ -637,14 +750,34 @@ function saveApiKey() {
   }
   API_KEY = input;
   localStorage.setItem("bbc_toeic_api_key", input);
+
+  const notionToken = document.getElementById("notion-token-input").value.trim();
+  const notionDb    = document.getElementById("notion-db-input").value.trim().replace(/-/g, "");
+  if (notionToken && notionDb) {
+    NOTION_TOKEN = notionToken;
+    NOTION_DB_ID = notionDb;
+    notionEnabled = true;
+    localStorage.setItem("bbc_toeic_notion_token", notionToken);
+    localStorage.setItem("bbc_toeic_notion_db_id", notionDb);
+  } else {
+    NOTION_TOKEN = ""; NOTION_DB_ID = ""; notionEnabled = false;
+    localStorage.removeItem("bbc_toeic_notion_token");
+    localStorage.removeItem("bbc_toeic_notion_db_id");
+  }
+
   document.getElementById("key-screen").style.display = "none";
   document.getElementById("topic-screen").style.display = "flex";
+
+  if (notionEnabled) loadVocabFromNotion();
 }
 
 function showKeyScreen() {
   document.getElementById("app-screen").style.display = "none";
   document.getElementById("topic-screen").style.display = "none";
   document.getElementById("key-screen").style.display = "flex";
+  document.getElementById("api-key-input").value = API_KEY || "";
+  document.getElementById("notion-token-input").value = NOTION_TOKEN || "";
+  document.getElementById("notion-db-input").value = NOTION_DB_ID || "";
 }
 
 // 헤더에 키 변경 버튼 클릭 시
@@ -668,6 +801,7 @@ renderTopicGrid();
 if (API_KEY && API_KEY.startsWith("sk-ant-")) {
   document.getElementById("key-screen").style.display = "none";
   document.getElementById("topic-screen").style.display = "flex";
+  if (notionEnabled) loadVocabFromNotion();
 }
 </script>
 </body>
